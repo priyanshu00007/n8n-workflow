@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+@layer utilities {
+  .canvas-grid {
+    background-size: 32px 32px;
+    background-image: radial-gradient(circle, #1e1e2e 1.5px, transparent 1.5px);
+  }
+  
+  .node-glow-blue {
+    box-shadow: 0 0 20px -5px rgba(59, 130, 246, 0.35);
+  }
+  
+  .node-glow-purple {
+    box-shadow: 0 0 20px -5px rgba(139, 92, 246, 0.35);
+  }
+  
+  .node-glow-green {
+    box-shadow: 0 0 20px -5px rgba(16, 185, 129, 0.35);
+  }
+
+  .node-glow-emerald {
+    box-shadow: 0 0 20px -5px rgba(16, 185, 129, 0.35);
+  }
+
+  .node-glow-amber {
+    box-shadow: 0 0 20px -5px rgba(245, 158, 11, 0.35);
+  }
+}
+
+/* Custom sleek scrollbar for Elegant Dark theme */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #09090b;
+}
+::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
+}
+

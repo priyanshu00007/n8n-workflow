@@ -1,0 +1,8 @@
+{
+  "name": "Synthetic Logic",
+  "description": "An AI-powered workflow automation platform with visual drag-and-drop workflow canvas, Google ADK agents, MCP tools registry, multi-agent orchestration, and real-time execution engine.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

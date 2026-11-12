@@ -1,0 +1,150 @@
+name: nexus-flow
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nexus-flow-app
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - OLLAMA_HOST=http://ollama:11434
+      - OLLAMA_MODELS=${OLLAMA_MODELS:-qwen2.5:0.5b,deepseek-r1:7b,llama3.1:8b,qwen2.5:7b}
+      - VAULT_SECRET=${VAULT_SECRET:-nexus-flow-production-vault-secret-32b!}
+    depends_on:
+      ollama:
+        condition: service_healthy
+      ollama-init:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - nexus-network
+
+  # One-shot service that pulls Ollama models (online) into the shared volume,
+  # so the stack starts with offline-capable models already available.
+  ollama-init:
+    image: ollama/ollama:latest
+    container_name: nexus-flow-ollama-init
+    restart: "no"
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        echo "Waiting for Ollama to become ready..."
+        until ollama list >/dev/null 2>&1; do sleep 2; done
+        echo "Pulling configured models: $${OLLAMA_MODELS}"
+        echo "$${OLLAMA_MODELS}" | tr ',' '\n' | tr -d ' ' | while read -r m; do
+          [ -n "$$m" ] || continue
+          if ollama list | awk '{print $$1}' | grep -qx "$$m"; then
+            echo "Model $$m already present, skipping pull."
+          else
+            echo "Pulling $$m ..."
+            ollama pull "$$m" || echo "WARN: failed to pull $$m (will retry on next start)"
+          fi
+        done
+        echo "Model initialization complete."
+    depends_on:
+      ollama:
+        condition: service_healthy
+    volumes:
+      - ollama_models:/root/.ollama
+    networks:
+      - nexus-network
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: nexus-flow-ollama
+    restart: unless-stopped
+    ports:
+      - "${OLLAMA_PORT:-11434}:11434"
+    environment:
+      - OLLAMA_KEEP_ALIVE=${OLLAMA_KEEP_ALIVE:--1}
+      - OLLAMA_NUM_PARALLEL=${OLLAMA_NUM_PARALLEL:-2}
+      - OLLAMA_MAX_LOADED_MODELS=${OLLAMA_MAX_LOADED_MODELS:-2}
+      - OLLAMA_FLASH_ATTENTION=${OLLAMA_FLASH_ATTENTION:-1}
+      - OLLAMA_KV_CACHE_TYPE=${OLLAMA_KV_CACHE_TYPE:-q8_0}
+    volumes:
+      - ollama_models:/root/.ollama
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    # GPU (NVIDIA): uncomment to enable. Requires nvidia-container-toolkit.
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+    networks:
+      - nexus-network
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: nexus-flow-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-nexus}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nexuspass}
+      POSTGRES_DB: ${POSTGRES_DB:-nexusflow}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nexus} -d ${POSTGRES_DB:-nexusflow}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - nexus-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: nexus-flow-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - nexus-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  ollama_models:
+
+networks:
+  nexus-network:
+    driver: bridge

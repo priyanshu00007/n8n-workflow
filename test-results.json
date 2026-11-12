@@ -1,0 +1,62 @@
+[
+  {
+    "id": "tpl-email-summarizer",
+    "status": "success",
+    "steps": 4
+  },
+  {
+    "id": "tpl-email-auto-responder",
+    "status": "success",
+    "steps": 5
+  },
+  {
+    "id": "tpl-news-digest",
+    "status": "success",
+    "steps": 4
+  },
+  {
+    "id": "tpl-maps-place-finder",
+    "status": "success",
+    "steps": 4
+  },
+  {
+    "id": "tpl-maps-competitor-watch",
+    "status": "success",
+    "steps": 4
+  },
+  {
+    "id": "tpl-invoice-triage",
+    "status": "success",
+    "steps": 4
+  },
+  {
+    "id": "tpl-web-research-report",
+    "status": "success",
+    "steps": 4
+  },
+  {
+    "id": "tpl-news-sentiment-tracker",
+    "status": "success",
+    "steps": 4
+  },
+  {
+    "id": "tpl-customer-support-drafts",
+    "status": "success",
+    "steps": 5
+  },
+  {
+    "id": "tpl-social-content-engine",
+    "status": "success",
+    "steps": 4
+  },
+  {
+    "id": "tpl-meeting-notes-email",
+    "status": "success",
+    "steps": 4
+  },
+  {
+    "id": "tpl-real-http-monitor",
+    "status": "success",
+    "steps": 3
+  }
+]
